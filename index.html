@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  < <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AR Кокошник</title>
+
+  <!-- A-Frame -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <!-- AR.js для A-Frame -->
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+
+  <style>
+    body { margin: 0; overflow: hidden; }
+    .ui-panel {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .ui-btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 30px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      backdrop-filter: blur(10px);
+    }
+    .btn-glass {
+      background: rgba(76, 175, 80, 0.8);
+      color: white;
+    }
+    .btn-glass.active {
+      background: rgba(76, 175, 80, 1);
+      box-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
+    }
+    .btn-color-red    { background: rgba(244, 67, 54, 0.8); color: white; }
+    .btn-color-blue   { background: rgba(33, 150, 243, 0.8); color: white; }
+    .btn-color-gold   { background: rgba(255, 193, 7, 0.8); color: black; }
+    .btn-color-purple { background: rgba(156, 39, 176, 0.8); color: white; }
+    .btn-color-clear  { background: rgba(100,100,100,0.8); color: white; }
+
+    .hint {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hint" id="hint">
+    Наведите камеру на маркер
+  </div>
+
+  <div class="ui-panel" id="ui" style="display:none;">
+    <button class="ui-btn btn-glass active" id="btnGlass">Стёкла: вкл</button>
+    <button class="ui-btn btn-color-red"    data-color="red">Красное</button>
+    <button class="ui-btn btn-color-blue"   data-color="blue">Синее</button>
+    <button class="ui-btn btn-color-gold"   data-color="gold">Золотое</button>
+    <button class="ui-btn btn-color-purple" data-color="purple">Фиолетовое</button>
+    <button class="ui-btn btn-color-clear"  id="btnClear">Без цвета</button>
+  </div>
+
+  <a-scene
+    embedded
+    arjs="sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+    renderer="logarithmicDepthBuffer: true; precision: medium;"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+
+    <!-- Ресурсы -->
+    <a-assets>
+      <!-- Основная модель кокошника -->
+      <a-asset-item id="kokoshnikModel" src="kokoshnik.glb"></a-asset-item>
+    </a-assets>
+
+    <!-- Маркер: barcode #0 (можно распечатать или показать на экране) -->
+    <a-marker type="barcode" value="0">
+
+      <!-- Основная модель кокошника -->
+      <a-entity
+        id="kokoshnik"
+        gltf-model="#kokoshnikModel"
+        position="0 0 0"
+        rotation="-90 0 0"
+        scale="0.5 0.5 0.5"
+        visible="true">
+      </a-entity>
+
+      <!-- Стёкла — отдельная группа для прозрачных элементов -->
+      <!-- Если стёкла — отдельная GLB-модель, подключаем так -->
+      <!-- <a-entity id="glasses" gltf-model="#glassesModel"
+                 position="0 0 0.01" rotation="-90 0 0"
+                 scale="0.5 0.5 0.5"
+                 material="opacity: 0.5; transparent: true; shader: flat;">
+      </a-entity> -->
+
+      <!-- Либо: если стёкла — это меши внутри той же модели,
+           помеченные суффиксом "_glass" в имени -->
+      <a-entity id="glasses"
+                position="0 0 0"
+                visible="true">
+        <!-- Красное стекло -->
+        <a-plane id="glass-red"
+                 position="0 0.15 0.02"
+                 width="0.2" height="0.15"
+                 rotation="-30 0 0"
+                 material="color: #ff0000; opacity: 0.4; transparent: true; side: double; metalness: 0.1; roughness: 0.1"
+                 visible="false">
+        </a-plane>
+        <!-- Синее стекло -->
+        <a-plane id="glass-blue"
+                 position="0 0.15 0.02"
+                 width="0.2" height="0.15"
+                 rotation="-30 0 0"
+                 material="color: #2196f3; opacity: 0.4; transparent: true; side: double; metalness: 0.1; roughness: 0.1"
+                 visible="false">
+        </a-plane>
+        <!-- Золотое стекло -->
+        <a-plane id="glass-gold"
+                 position="0 0.15 0.02"
+                 width="0.2" height="0.15"
+                 rotation="-30 0 0"
+                 material="color: #ffc107; opacity: 0.4; transparent: true; side: double; metalness: 0.3; roughness: 0.1"
+                 visible="false">
+        </a-plane>
+        <!-- Фиолетовое стекло -->
+        <a-plane id="glass-purple"
+                 position="0 0.15 0.02"
+                 width="0.2" height="0.15"
+                 rotation="-30 0 0"
+                 material="color: #9c27b0; opacity: 0.4; transparent: true; side: double; metalness: 0.1; roughness: 0.1"
+                 visible="false">
+        </a-plane>
+      </a-entity>
+
+    </a-marker>
+
+    <!-- Камера -->
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <script>
+    // Скрываем подсказку и показываем UI, когда маркер найден
+    const scene = document.querySelector('a-scene');
+    const hint = document.getElementById('hint');
+    const ui = document.getElementById('ui');
+    let markerFound = false;
+
+    scene.addEventListener('markerFound', () => {
+      hint.style.display = 'none';
+      ui.style.display = 'flex';
+      markerFound = true;
+    });
+
+    scene.addEventListener('markerLost', () => {
+      hint.style.display = 'block';
+      ui.style.display = 'none';
+      markerFound = false;
+    });
+
+    // Кнопка вкл/выкл стёкол
+    const btnGlass = document.getElementById('btnGlass');
+    let glassesVisible = true;
+
+    btnGlass.addEventListener('click', () => {
+      glassesVisible = !glassesVisible;
+      document.getElementById('glasses').setAttribute('visible', glassesVisible);
+      btnGlass.textContent = glassesVisible ? 'Стёкла: вкл' : 'Стёкла: выкл';
+      btnGlass.classList.toggle('active', glassesVisible);
+
+      // Скрываем все цветные варианты
+      ['red', 'blue', 'gold', 'purple'].forEach(c => {
+        const el = document.getElementById('glass-' + c);
+        if (el) el.setAttribute('visible', false);
+      });
+    });
+
+    // Кнопки выбора цвета стекла
+    document.querySelectorAll('[data-color]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const color = btn.dataset.color;
+
+        // Скрываем все стёкла
+        ['red', 'blue', 'gold', 'purple'].forEach(c => {
+          const el = document.getElementById('glass-' + c);
+          if (el) el.setAttribute('visible', false);
+        });
+
+        // Показываем выбранное
+        const target = document.getElementById('glass-' + color);
+        if (target) target.setAttribute('visible', true);
+
+        // Включаем группу стёкол, если выключена
+        if (!glassesVisible) {
+          glassesVisible = true;
+          document.getElementById('glasses').setAttribute('visible', true);
+          btnGlass.textContent = 'Стёкла: вкл';
+          btnGlass.classList.add('active');
+        }
+      });
+    });
+
+    // Кнопка "без цвета" — убираем все цветные
+    document.getElementById('btnClear').addEventListener('click', () => {
+      ['red', 'blue', 'gold', 'purple'].forEach(c => {
+        const el = document.getElementById('glass-' + c);
+        if (el) el.setAttribute('visible', false);
+      });
+    });
+  </script>
+
+</body>
+</html>
