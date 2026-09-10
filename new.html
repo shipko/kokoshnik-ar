@@ -69,7 +69,7 @@
     }
     #btnHideMarker:active { opacity: 0.8; }
 
-    /* ── Hint bar (top) ──────────────────────────────────────── */
+    /* ── Hint bar ────────────────────────────────────────────── */
     #hint {
       position: fixed;
       top: 18px;
@@ -95,7 +95,7 @@
       position: fixed;
       top: 0; left: 0; right: 0;
       height: 3px;
-      background: linear-gradient(90deg, #6c63ff, #48c7fe);
+      background: linear-gradient(90deg, #d4af37, #ff8f00);
       z-index: 9998;
       animation: loadingAnim 1.6s ease-in-out infinite;
     }
@@ -105,7 +105,7 @@
       100% { transform: translateX(100%); }
     }
 
-    /* ── Show-marker button (visible before marker found) ────── */
+    /* ── Show-marker button ──────────────────────────────────── */
     #showMarkerBtn {
       position: fixed;
       bottom: 28px;
@@ -129,7 +129,7 @@
     }
     #showMarkerBtn:active { transform: translateX(-50%) scale(0.95); }
 
-    /* ── Control panel (shown when marker is visible) ─────────── */
+    /* ── Control panel ───────────────────────────────────────── */
     #ui {
       position: fixed;
       bottom: 0; left: 0; right: 0;
@@ -180,10 +180,9 @@
         #bbb 0deg 90deg, #fff 90deg 180deg,
         #bbb 180deg 270deg, #fff 270deg 360deg
       );
-      background-size: 50% 50%;
     }
 
-    /* Action buttons row */
+    /* Action buttons */
     .action-row {
       display: flex;
       gap: 8px;
@@ -235,7 +234,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      line-height: 1;
       transition: background 0.15s;
     }
     .zoom-btn:active { background: rgba(0,0,0,0.80); }
@@ -248,16 +246,16 @@
       border-radius: 8px;
     }
 
-    /* ── Found flash animation ───────────────────────────────── */
+    /* ── Found flash ─────────────────────────────────────────── */
     @keyframes flashIn {
       0%   { opacity: 0; }
-      40%  { opacity: 0.35; }
+      40%  { opacity: 0.30; }
       100% { opacity: 0; }
     }
     .flash-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(255,255,255,0.5);
+      background: rgba(255,255,220,0.6);
       pointer-events: none;
       z-index: 8000;
       animation: flashIn 0.5s ease-out forwards;
@@ -270,9 +268,7 @@
   <div id="markerOverlay">
     <h2>Маркер для AR</h2>
     <div class="marker-img-wrap">
-      <img id="markerImg"
-           src="https://raw.githack.com/AR-js-org/AR.js/master/data/images/hiro.png"
-           alt="Hiro marker">
+      <img src="https://raw.githack.com/AR-js-org/AR.js/master/data/images/hiro.png" alt="Hiro marker">
     </div>
     <p>Покажите этот маркер другому устройству<br>
        и наведите на него камеру AR-страницы</p>
@@ -282,7 +278,7 @@
   <!-- Loading bar ──────────────────────────────────────────────────────── -->
   <div id="loadingBar"></div>
 
-  <!-- Zoom controls ───────────────────────────────────────────────────── -->
+  <!-- Zoom ────────────────────────────────────────────────────────────── -->
   <div class="zoom-wrap">
     <button class="zoom-btn" id="btnZoomIn">+</button>
     <span class="zoom-label" id="zoomLabel">1×</span>
@@ -292,7 +288,7 @@
   <!-- Hint ────────────────────────────────────────────────────────────── -->
   <div id="hint">Наведите камеру на маркер</div>
 
-  <!-- Show-marker floating button (pre-marker state) ──────────────────── -->
+  <!-- Show-marker button (pre-detection state) ────────────────────────── -->
   <button id="showMarkerBtn">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
@@ -301,12 +297,10 @@
     Показать маркер
   </button>
 
-  <!-- Control panel ───────────────────────────────────────────────────── -->
+  <!-- Control panel (shown when marker detected) ───────────────────────── -->
   <div id="ui">
     <span class="panel-label">Цвет стёкол</span>
-    <div class="swatch-row" id="swatchRow">
-      <!-- Built by JS -->
-    </div>
+    <div class="swatch-row" id="swatchRow"></div>
     <div class="action-row">
       <button class="action-btn active" id="btnGlass">💎 Стёкла: вкл</button>
       <button class="action-btn" id="btnShowMarker2">🎯 Маркер</button>
@@ -322,52 +316,201 @@
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false">
 
-    <a-assets>
-      <!--
-        ФОРМАТ МОДЕЛИ: GLB (бинарный GLTF).
-        Экспорт из Blender: File → Export → glTF 2.0 → Format: GLB.
-        Назовите меши со стёклами с "glass" в имени (напр. glass_front, glass_left).
-        Положите файл kokoshnik.glb рядом с этим HTML.
-      -->
-      <a-asset-item id="kokoshnikModel" src="kokoshnik.glb"></a-asset-item>
-    </a-assets>
-
     <!--
-      Маркер: стандартный Hiro (чёрно-белый квадрат со скруглёнными углами).
-      Распечатайте или нажмите кнопку «Показать маркер», чтобы открыть его
-      на другом экране, и наведите сюда камеру.
+      Маркер: стандартный Hiro.
+      Нажмите «Показать маркер» — откроется на экране, наведите сюда вторую камеру.
+      Или распечатайте: https://raw.githack.com/AR-js-org/AR.js/master/data/images/hiro.png
     -->
     <a-marker preset="hiro" id="arMarker">
+
+      <!--
+        ТЕСТОВАЯ МОДЕЛЬ: процедурный кокошник из Three.js геометрий.
+        Когда будет готов GLB-файл — замените атрибуты на:
+          gltf-model="#kokoshnikModel"
+          rotation="-90 0 0"
+          scale="1 1 1"
+        и добавьте <a-asset-item id="kokoshnikModel" src="kokoshnik.glb"> в <a-assets>.
+      -->
       <a-entity
         id="kokoshnik"
-        gltf-model="#kokoshnikModel"
+        test-kokoshnik
+        kokoshnik-glass
         position="0 0 0"
-        rotation="-90 0 0"
-        scale="1 1 1"
-        kokoshnik-glass>
+        rotation="0 0 0"
+        scale="0.55 0.55 0.55">
       </a-entity>
+
     </a-marker>
 
     <a-entity camera></a-entity>
   </a-scene>
 
   <script>
-    // ── Glass colours palette ────────────────────────────────────────────────
+    // ── Colour palette ───────────────────────────────────────────────────────
     const COLOURS = [
-      { name: 'Красный',    hex: '#e53935', opacity: 0.52 },
-      { name: 'Синий',      hex: '#1e88e5', opacity: 0.52 },
-      { name: 'Зелёный',    hex: '#43a047', opacity: 0.52 },
-      { name: 'Золотой',    hex: '#fdd835', opacity: 0.58 },
-      { name: 'Фиолетовый', hex: '#8e24aa', opacity: 0.52 },
-      { name: 'Розовый',    hex: '#e91e63', opacity: 0.52 },
-      { name: 'Бирюзовый',  hex: '#00acc1', opacity: 0.52 },
-      { name: 'Янтарный',   hex: '#ff8f00', opacity: 0.56 },
+      { name: 'Красный',    hex: '#e53935', opacity: 0.55 },
+      { name: 'Синий',      hex: '#1e88e5', opacity: 0.55 },
+      { name: 'Зелёный',    hex: '#43a047', opacity: 0.55 },
+      { name: 'Золотой',    hex: '#fdd835', opacity: 0.60 },
+      { name: 'Фиолетовый', hex: '#8e24aa', opacity: 0.55 },
+      { name: 'Розовый',    hex: '#e91e63', opacity: 0.55 },
+      { name: 'Бирюзовый',  hex: '#00acc1', opacity: 0.55 },
+      { name: 'Янтарный',   hex: '#ff8f00', opacity: 0.58 },
     ];
 
-    // ── A-Frame component: glass mesh manager ────────────────────────────────
+    // ── Component: procedural kokoshnik geometry ─────────────────────────────
     //
-    // Requires glass meshes to have "glass" anywhere in their Blender name.
-    // Examples: "glass_front", "kokoshnik_glass_01", "стекло".
+    // Builds a stylised kokoshnik from Three.js primitives.
+    // Glass gems are named "glass_gem_N" so kokoshnik-glass finds them.
+    // Emits 'model-loaded' so kokoshnik-glass can initialise.
+    //
+    AFRAME.registerComponent('test-kokoshnik', {
+      init() {
+        const group = new THREE.Group();
+
+        const matGold = new THREE.MeshStandardMaterial({
+          color: 0xd4af37, metalness: 0.85, roughness: 0.12,
+        });
+        const matRed = new THREE.MeshStandardMaterial({
+          color: 0xb01030, metalness: 0.06, roughness: 0.58,
+        });
+        const matBand = new THREE.MeshStandardMaterial({
+          color: 0x880020, metalness: 0.06, roughness: 0.62,
+        });
+        const matPearl = new THREE.MeshStandardMaterial({
+          color: 0xf0ece0, metalness: 0.02, roughness: 0.28,
+        });
+
+        // ── Arch body (ExtrudeGeometry) ──────────────────────────────────
+        // Profile in XY plane; Y = 0 is the marker surface.
+        // Arch spans Y 0.30 → 1.90, X ±0.75.
+        const shape = new THREE.Shape();
+        shape.moveTo(-0.75, 0.30);
+        shape.lineTo(-0.75, 0.65);
+        shape.bezierCurveTo(-0.75, 1.20, -0.35, 1.75,  0,    1.90);
+        shape.bezierCurveTo( 0.35, 1.75,  0.75, 1.20,  0.75, 0.65);
+        shape.lineTo(0.75, 0.30);
+        shape.closePath();
+
+        const archGeo = new THREE.ExtrudeGeometry(shape, {
+          depth: 0.08,
+          bevelEnabled: true,
+          bevelThickness: 0.022,
+          bevelSize: 0.022,
+          bevelSegments: 3,
+        });
+        const archMesh = new THREE.Mesh(archGeo, matRed);
+        archMesh.name = 'arch_body';
+        group.add(archMesh);
+
+        // ── Headband box ─────────────────────────────────────────────────
+        // Sits at the base of the arch, Y 0 → 0.42.
+        const bandGeo = new THREE.BoxGeometry(1.56, 0.42, 0.10);
+        const bandMesh = new THREE.Mesh(bandGeo, matBand);
+        bandMesh.name = 'headband';
+        bandMesh.position.set(0, 0.21, 0.04);
+        group.add(bandMesh);
+
+        // ── Gold trim: arch outline ──────────────────────────────────────
+        // Sampled points following the arch edge (Z = 0.09 = front face + tiny offset).
+        const borderPts = [
+          [ 0.75, 0.28], [ 0.75, 0.50], [ 0.75, 0.65],
+          [ 0.72, 0.90], [ 0.62, 1.15], [ 0.48, 1.40],
+          [ 0.28, 1.65], [  0,   1.91],
+          [-0.28, 1.65], [-0.48, 1.40], [-0.62, 1.15],
+          [-0.72, 0.90], [-0.75, 0.65], [-0.75, 0.50], [-0.75, 0.28],
+        ].map(([x, y]) => new THREE.Vector3(x, y, 0.105));
+
+        const borderCurve = new THREE.CatmullRomCurve3(borderPts, false, 'catmullrom', 0.4);
+        const trimGeo = new THREE.TubeGeometry(borderCurve, 100, 0.030, 8, false);
+        const trimMesh = new THREE.Mesh(trimGeo, matGold);
+        trimMesh.name = 'gold_trim_arch';
+        group.add(trimMesh);
+
+        // Gold horizontal bars on headband
+        [
+          [0, 0.415, 0.09, 1.56, 0.040, 0.055],
+          [0, 0.005, 0.09, 1.56, 0.040, 0.055],
+        ].forEach(([x, y, z, w, h, d], i) => {
+          const barMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), matGold);
+          barMesh.name = `gold_bar_${i}`;
+          barMesh.position.set(x, y, z);
+          group.add(barMesh);
+        });
+
+        // Small gold circles pattern on arch body (decorative)
+        const decPts = [
+          [-0.55, 0.50], [-0.28, 0.50], [0, 0.50], [0.28, 0.50], [0.55, 0.50],
+          [-0.42, 0.36], [-0.14, 0.36], [0.14, 0.36], [0.42, 0.36],
+        ];
+        decPts.forEach(([x, y], i) => {
+          const dGeo = new THREE.TorusGeometry(0.04, 0.010, 6, 14);
+          const dMesh = new THREE.Mesh(dGeo, matGold);
+          dMesh.name = `dec_circle_${i}`;
+          dMesh.position.set(x, y, 0.095);
+          group.add(dMesh);
+        });
+
+        // ── Glass gems ───────────────────────────────────────────────────
+        // Arranged in triangle rows inside the arch.
+        // Name includes "glass" so kokoshnik-glass component finds them.
+        const gemLayout = [
+          //   x      y     r
+          [  0,    1.70, 0.110 ],   // top single
+          [ -0.30, 1.37, 0.090 ], [ 0.30, 1.37, 0.090 ],
+          [ -0.50, 1.00, 0.085 ], [  0,   1.04, 0.090 ], [ 0.50, 1.00, 0.085 ],
+          [ -0.60, 0.64, 0.080 ], [ -0.22,0.67, 0.080 ], [ 0.22, 0.67, 0.080 ], [ 0.60, 0.64, 0.080 ],
+        ];
+
+        const gemMat = new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.68,
+          roughness: 0.04,
+          metalness: 0.0,
+          side: THREE.FrontSide,
+        });
+
+        gemLayout.forEach(([x, y, r], i) => {
+          const gemMesh = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 16), gemMat.clone());
+          gemMesh.name = `glass_gem_${i}`;   // <── "glass" → found by kokoshnik-glass
+          gemMesh.position.set(x, y, 0.115);
+          group.add(gemMesh);
+
+          // Gold setting ring around each gem
+          const ringMesh = new THREE.Mesh(
+            new THREE.TorusGeometry(r + 0.013, 0.013, 6, 20),
+            matGold,
+          );
+          ringMesh.name = `gem_setting_${i}`;
+          ringMesh.position.set(x, y, 0.095);
+          group.add(ringMesh);
+        });
+
+        // ── Pearl fringe ─────────────────────────────────────────────────
+        // Row of small pearls along the bottom gold bar.
+        for (let p = -6; p <= 6; p++) {
+          const pearlMesh = new THREE.Mesh(new THREE.SphereGeometry(0.042, 10, 8), matPearl);
+          pearlMesh.name = `pearl_${p + 6}`;
+          pearlMesh.position.set(p * 0.112, -0.025, 0.06);
+          group.add(pearlMesh);
+        }
+
+        // ── Mount and notify ─────────────────────────────────────────────
+        this.el.setObject3D('mesh', group);
+
+        // Emit model-loaded after a tick so kokoshnik-glass listener is ready.
+        setTimeout(() => this.el.emit('model-loaded', {}, false), 0);
+
+        document.getElementById('loadingBar').style.display = 'none';
+      },
+    });
+
+    // ── Component: glass mesh colour manager ─────────────────────────────────
+    //
+    // Listens for 'model-loaded', finds meshes whose name contains "glass",
+    // and exposes applyColour / clearColour / setGlassVisible to the UI.
+    // Works with both test-kokoshnik (above) and real GLB models.
     //
     AFRAME.registerComponent('kokoshnik-glass', {
       init() {
@@ -385,33 +528,25 @@
         const rx = /glass|стекло|crystal|gem|камен|bead|бусин/i;
         root.traverse(node => {
           if (node.isMesh && rx.test(node.name)) {
-            node.userData.origMat = Array.isArray(node.material)
-              ? node.material.map(m => m.clone())
-              : node.material.clone();
+            node.userData.origMat = node.material.clone();
             this.glassMeshes.push(node);
           }
         });
 
-        console.log('[kokoshnik-glass] glass meshes found:', this.glassMeshes.length,
-          this.glassMeshes.map(m => m.name));
+        console.log('[kokoshnik-glass] meshes:', this.glassMeshes.map(m => m.name));
 
-        // Expose to window for UI callbacks
         window._glassComp = this;
-        document.dispatchEvent(new Event('glassReady'));
-
-        // Hide loading bar
         document.getElementById('loadingBar').style.display = 'none';
+        document.dispatchEvent(new Event('glassReady'));
       },
 
-      // Apply (or update) colour to all glass meshes
       applyColour(hex, opacity) {
         if (!this.glassMat) {
           this.glassMat = new THREE.MeshStandardMaterial({
             transparent: true,
-            roughness:   0.05,
-            metalness:   0.08,
-            envMapIntensity: 1.0,
-            side: THREE.DoubleSide,
+            roughness:   0.04,
+            metalness:   0.06,
+            side: THREE.FrontSide,
             depthWrite: false,
           });
         }
@@ -425,7 +560,6 @@
         });
       },
 
-      // Restore original materials (no tint)
       clearColour() {
         this.glassMeshes.forEach(m => {
           m.material = m.userData.origMat;
@@ -433,7 +567,6 @@
         });
       },
 
-      // Toggle glass visibility
       setGlassVisible(on) {
         this.glassOn = on;
         this.glassMeshes.forEach(m => { m.visible = on; });
@@ -443,7 +576,6 @@
     // ── Build colour swatches ────────────────────────────────────────────────
     const swatchRow = document.getElementById('swatchRow');
 
-    // "No tint" swatch
     const noneSwatch = document.createElement('button');
     noneSwatch.className = 'swatch swatch-none active';
     noneSwatch.title = 'Без цвета';
@@ -459,107 +591,94 @@
       swatchRow.appendChild(btn);
     });
 
-    let activeSwatchIdx = -1; // -1 = none
+    let activeSwatchIdx = -1;
 
     function selectSwatch(idx) {
       activeSwatchIdx = idx;
-      swatchRow.querySelectorAll('.swatch').forEach(s => {
-        s.classList.toggle('active', +s.dataset.idx === idx);
-      });
+      swatchRow.querySelectorAll('.swatch').forEach(s =>
+        s.classList.toggle('active', +s.dataset.idx === idx)
+      );
 
       const comp = window._glassComp;
       if (!comp) return;
-
-      if (idx === -1) {
-        comp.clearColour();
-      } else {
-        const c = COLOURS[idx];
-        comp.applyColour(c.hex, c.opacity);
-      }
+      if (idx === -1) comp.clearColour();
+      else { const c = COLOURS[idx]; comp.applyColour(c.hex, c.opacity); }
     }
 
     swatchRow.addEventListener('click', e => {
       const btn = e.target.closest('.swatch');
-      if (!btn) return;
-      selectSwatch(+btn.dataset.idx);
+      if (btn) selectSwatch(+btn.dataset.idx);
     });
 
     // ── Glass toggle ─────────────────────────────────────────────────────────
     let glassOn = true;
     const btnGlass = document.getElementById('btnGlass');
-
     btnGlass.addEventListener('click', () => {
       glassOn = !glassOn;
       btnGlass.textContent = glassOn ? '💎 Стёкла: вкл' : '💎 Стёкла: выкл';
       btnGlass.classList.toggle('active', glassOn);
-
-      const comp = window._glassComp;
-      if (comp) comp.setGlassVisible(glassOn);
+      window._glassComp?.setGlassVisible(glassOn);
     });
 
     // ── Marker overlay ───────────────────────────────────────────────────────
-    function openMarkerOverlay() {
-      document.getElementById('markerOverlay').style.display = 'flex';
-    }
-    function closeMarkerOverlay() {
-      document.getElementById('markerOverlay').style.display = 'none';
-    }
+    function openMarkerOverlay()  { document.getElementById('markerOverlay').style.display = 'flex'; }
+    function closeMarkerOverlay() { document.getElementById('markerOverlay').style.display = 'none'; }
 
     document.getElementById('showMarkerBtn').addEventListener('click',  openMarkerOverlay);
     document.getElementById('btnShowMarker2').addEventListener('click', openMarkerOverlay);
     document.getElementById('btnHideMarker').addEventListener('click',  closeMarkerOverlay);
 
     // ── AR marker found / lost ───────────────────────────────────────────────
-    const arMarker    = document.getElementById('arMarker');
-    const hint        = document.getElementById('hint');
-    const ui          = document.getElementById('ui');
+    const arMarker     = document.getElementById('arMarker');
+    const hint         = document.getElementById('hint');
+    const ui           = document.getElementById('ui');
     const showMarkerBtn = document.getElementById('showMarkerBtn');
 
-    arMarker.addEventListener('markerFound', () => {
-      hint.style.opacity      = '0';
-      hint.style.pointerEvents = 'none';
-      showMarkerBtn.style.display = 'none';
-      ui.style.display        = 'flex';
+    let lastFound = false;
 
-      // Brief flash to signal detection
+    function onMarkerFound() {
+      if (lastFound) return;
+      lastFound = true;
+      hint.style.opacity = '0';
+      showMarkerBtn.style.display = 'none';
+      ui.style.display = 'flex';
       const flash = document.createElement('div');
       flash.className = 'flash-overlay';
       document.body.appendChild(flash);
       flash.addEventListener('animationend', () => flash.remove());
-    });
+    }
 
-    arMarker.addEventListener('markerLost', () => {
-      hint.style.opacity      = '1';
-      hint.style.pointerEvents = '';
+    function onMarkerLost() {
+      if (!lastFound) return;
+      lastFound = false;
+      hint.style.opacity = '1';
       showMarkerBtn.style.display = 'flex';
-      ui.style.display        = 'none';
-    });
+      ui.style.display = 'none';
+    }
 
-    // Also listen on scene as fallback (AR.js bubbles events differently across versions)
-    const scene = document.getElementById('scene');
-    scene.addEventListener('markerFound', () => arMarker.dispatchEvent(new Event('markerFound')));
-    scene.addEventListener('markerLost',  () => arMarker.dispatchEvent(new Event('markerLost')));
+    arMarker.addEventListener('markerFound', onMarkerFound);
+    arMarker.addEventListener('markerLost',  onMarkerLost);
 
-    // ── Zoom controls ────────────────────────────────────────────────────────
-    const ZOOM_MIN  = 0.5;
-    const ZOOM_MAX  = 4.0;
-    const ZOOM_STEP = 0.25;
+    // Fallback: AR.js may bubble events to <a-scene> in some versions
+    const sceneEl = document.getElementById('scene');
+    sceneEl.addEventListener('markerFound', onMarkerFound);
+    sceneEl.addEventListener('markerLost',  onMarkerLost);
+
+    // ── Zoom ─────────────────────────────────────────────────────────────────
+    const ZOOM_MIN = 0.5, ZOOM_MAX = 4.0, ZOOM_STEP = 0.25;
     let zoom = 1;
 
     function applyZoom() {
-      const cam = document.querySelector('[camera]');
-      if (cam) cam.setAttribute('zoom', zoom);
+      document.querySelector('[camera]')?.setAttribute('zoom', zoom);
       document.getElementById('zoomLabel').textContent =
         zoom.toFixed(2).replace(/\.?0+$/, '') + '×';
     }
 
     document.getElementById('btnZoomIn').addEventListener('click', () => {
-      zoom = Math.min(ZOOM_MAX, +(zoom + ZOOM_STEP).toFixed(2));
-      applyZoom();
+      zoom = Math.min(ZOOM_MAX, +(zoom + ZOOM_STEP).toFixed(2)); applyZoom();
     });
     document.getElementById('btnZoomOut').addEventListener('click', () => {
-      zoom = Math.max(ZOOM_MIN, +(zoom - ZOOM_STEP).toFixed(2));
-      applyZoom();
+      zoom = Math.max(ZOOM_MIN, +(zoom - ZOOM_STEP).toFixed(2)); applyZoom();
     });
   </script>
 
