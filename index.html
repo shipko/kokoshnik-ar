@@ -272,7 +272,7 @@
     function applyZoom() {
       const cameraEl = document.querySelector('[camera]');
       if (cameraEl) {
-        cameraEl.setAttribute('camera', 'zoom', currentZoom);
+        cameraEl.setAttribute('zoom', currentZoom);
       }
       document.getElementById('zoomLabel').textContent = currentZoom.toFixed(2).replace(/\.?0+$/, '') + '×';
     }
