@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AR Кокошник</title>
+
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Marker overlay ──────────────────────────────────────── */
+    #markerOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: #fafafa;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 24px;
+    }
+    #markerOverlay h2 {
+      margin: 0;
+      font-size: 20px;
+      color: #222;
+      text-align: center;
+    }
+    #markerOverlay .marker-img-wrap {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      padding: 20px;
+    }
+    #markerOverlay img {
+      display: block;
+      width: min(72vw, 72vh, 320px);
+      height: auto;
+    }
+    #markerOverlay p {
+      margin: 0;
+      font-size: 14px;
+      color: #555;
+      text-align: center;
+      max-width: 300px;
+      line-height: 1.5;
+    }
+    #btnHideMarker {
+      padding: 14px 36px;
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      border-radius: 32px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+    }
+    #btnHideMarker:active { opacity: 0.8; }
+
+    /* ── Hint bar (top) ──────────────────────────────────────── */
+    #hint {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      background: rgba(0,0,0,0.60);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 22px;
+      font-size: 13px;
+      line-height: 1.4;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      pointer-events: none;
+      white-space: nowrap;
+      transition: opacity 0.3s;
+    }
+
+    /* ── Loading bar ─────────────────────────────────────────── */
+    #loadingBar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #6c63ff, #48c7fe);
+      z-index: 9998;
+      animation: loadingAnim 1.6s ease-in-out infinite;
+    }
+    @keyframes loadingAnim {
+      0%   { transform: translateX(-100%); }
+      50%  { transform: translateX(0); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* ── Show-marker button (visible before marker found) ────── */
+    #showMarkerBtn {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      padding: 14px 28px;
+      background: rgba(20,20,20,0.72);
+      color: #fff;
+      border: 1.5px solid rgba(255,255,255,0.25);
+      border-radius: 32px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: transform 0.15s, background 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #showMarkerBtn:active { transform: translateX(-50%) scale(0.95); }
+
+    /* ── Control panel (shown when marker is visible) ─────────── */
+    #ui {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 9999;
+      padding: 16px 20px 32px;
+      background: rgba(10,10,10,0.60);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-top: 1px solid rgba(255,255,255,0.10);
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .panel-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.45);
+      align-self: flex-start;
+    }
+
+    /* Color swatches */
+    .swatch-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .swatch {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.18);
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+      flex-shrink: 0;
+    }
+    .swatch:active { transform: scale(0.88); }
+    .swatch.active {
+      border-color: #fff;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.5);
+      transform: scale(1.12);
+    }
+    .swatch-none {
+      background: conic-gradient(
+        #bbb 0deg 90deg, #fff 90deg 180deg,
+        #bbb 180deg 270deg, #fff 270deg 360deg
+      );
+      background-size: 50% 50%;
+    }
+
+    /* Action buttons row */
+    .action-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .action-btn {
+      padding: 10px 18px;
+      border: 1.5px solid rgba(255,255,255,0.25);
+      border-radius: 22px;
+      background: rgba(255,255,255,0.10);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      backdrop-filter: blur(4px);
+    }
+    .action-btn:active { background: rgba(255,255,255,0.22); }
+    .action-btn.active {
+      background: rgba(255,255,255,0.20);
+      border-color: rgba(255,255,255,0.60);
+    }
+
+    /* ── Zoom controls ───────────────────────────────────────── */
+    .zoom-wrap {
+      position: fixed;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+    }
+    .zoom-btn {
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 50%;
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      background: rgba(0,0,0,0.58);
+      color: #fff;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      transition: background 0.15s;
+    }
+    .zoom-btn:active { background: rgba(0,0,0,0.80); }
+    .zoom-label {
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(0,0,0,0.50);
+      padding: 3px 7px;
+      border-radius: 8px;
+    }
+
+    /* ── Found flash animation ───────────────────────────────── */
+    @keyframes flashIn {
+      0%   { opacity: 0; }
+      40%  { opacity: 0.35; }
+      100% { opacity: 0; }
+    }
+    .flash-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.5);
+      pointer-events: none;
+      z-index: 8000;
+      animation: flashIn 0.5s ease-out forwards;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Marker image overlay ─────────────────────────────────────────────── -->
+  <div id="markerOverlay">
+    <h2>Маркер для AR</h2>
+    <div class="marker-img-wrap">
+      <img id="markerImg"
+           src="https://raw.githack.com/AR-js-org/AR.js/master/data/images/hiro.png"
+           alt="Hiro marker">
+    </div>
+    <p>Покажите этот маркер другому устройству<br>
+       и наведите на него камеру AR-страницы</p>
+    <button id="btnHideMarker">← Вернуться к камере</button>
+  </div>
+
+  <!-- Loading bar ──────────────────────────────────────────────────────── -->
+  <div id="loadingBar"></div>
+
+  <!-- Zoom controls ───────────────────────────────────────────────────── -->
+  <div class="zoom-wrap">
+    <button class="zoom-btn" id="btnZoomIn">+</button>
+    <span class="zoom-label" id="zoomLabel">1×</span>
+    <button class="zoom-btn" id="btnZoomOut">−</button>
+  </div>
+
+  <!-- Hint ────────────────────────────────────────────────────────────── -->
+  <div id="hint">Наведите камеру на маркер</div>
+
+  <!-- Show-marker floating button (pre-marker state) ──────────────────── -->
+  <button id="showMarkerBtn">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+      <rect x="3" y="14" width="7" height="7"/><circle cx="17.5" cy="17.5" r="2.5"/>
+    </svg>
+    Показать маркер
+  </button>
+
+  <!-- Control panel ───────────────────────────────────────────────────── -->
+  <div id="ui">
+    <span class="panel-label">Цвет стёкол</span>
+    <div class="swatch-row" id="swatchRow">
+      <!-- Built by JS -->
+    </div>
+    <div class="action-row">
+      <button class="action-btn active" id="btnGlass">💎 Стёкла: вкл</button>
+      <button class="action-btn" id="btnShowMarker2">🎯 Маркер</button>
+    </div>
+  </div>
+
+  <!-- A-Frame Scene ───────────────────────────────────────────────────── -->
+  <a-scene
+    id="scene"
+    embedded
+    arjs="sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3; zoom: 1;"
+    renderer="logarithmicDepthBuffer: true; precision: medium; alpha: true;"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+
+    <a-assets>
+      <!--
+        ФОРМАТ МОДЕЛИ: GLB (бинарный GLTF).
+        Экспорт из Blender: File → Export → glTF 2.0 → Format: GLB.
+        Назовите меши со стёклами с "glass" в имени (напр. glass_front, glass_left).
+        Положите файл kokoshnik.glb рядом с этим HTML.
+      -->
+      <a-asset-item id="kokoshnikModel" src="kokoshnik.glb"></a-asset-item>
+    </a-assets>
+
+    <!--
+      Маркер: стандартный Hiro (чёрно-белый квадрат со скруглёнными углами).
+      Распечатайте или нажмите кнопку «Показать маркер», чтобы открыть его
+      на другом экране, и наведите сюда камеру.
+    -->
+    <a-marker preset="hiro" id="arMarker">
+      <a-entity
+        id="kokoshnik"
+        gltf-model="#kokoshnikModel"
+        position="0 0 0"
+        rotation="-90 0 0"
+        scale="1 1 1"
+        kokoshnik-glass>
+      </a-entity>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <script>
+    // ── Glass colours palette ────────────────────────────────────────────────
+    const COLOURS = [
+      { name: 'Красный',    hex: '#e53935', opacity: 0.52 },
+      { name: 'Синий',      hex: '#1e88e5', opacity: 0.52 },
+      { name: 'Зелёный',    hex: '#43a047', opacity: 0.52 },
+      { name: 'Золотой',    hex: '#fdd835', opacity: 0.58 },
+      { name: 'Фиолетовый', hex: '#8e24aa', opacity: 0.52 },
+      { name: 'Розовый',    hex: '#e91e63', opacity: 0.52 },
+      { name: 'Бирюзовый',  hex: '#00acc1', opacity: 0.52 },
+      { name: 'Янтарный',   hex: '#ff8f00', opacity: 0.56 },
+    ];
+
+    // ── A-Frame component: glass mesh manager ────────────────────────────────
+    //
+    // Requires glass meshes to have "glass" anywhere in their Blender name.
+    // Examples: "glass_front", "kokoshnik_glass_01", "стекло".
+    //
+    AFRAME.registerComponent('kokoshnik-glass', {
+      init() {
+        this.glassMeshes = [];
+        this.glassMat    = null;
+        this.glassOn     = true;
+
+        this.el.addEventListener('model-loaded', () => this.onModelLoaded());
+      },
+
+      onModelLoaded() {
+        const root = this.el.getObject3D('mesh');
+        if (!root) return;
+
+        const rx = /glass|стекло|crystal|gem|камен|bead|бусин/i;
+        root.traverse(node => {
+          if (node.isMesh && rx.test(node.name)) {
+            node.userData.origMat = Array.isArray(node.material)
+              ? node.material.map(m => m.clone())
+              : node.material.clone();
+            this.glassMeshes.push(node);
+          }
+        });
+
+        console.log('[kokoshnik-glass] glass meshes found:', this.glassMeshes.length,
+          this.glassMeshes.map(m => m.name));
+
+        // Expose to window for UI callbacks
+        window._glassComp = this;
+        document.dispatchEvent(new Event('glassReady'));
+
+        // Hide loading bar
+        document.getElementById('loadingBar').style.display = 'none';
+      },
+
+      // Apply (or update) colour to all glass meshes
+      applyColour(hex, opacity) {
+        if (!this.glassMat) {
+          this.glassMat = new THREE.MeshStandardMaterial({
+            transparent: true,
+            roughness:   0.05,
+            metalness:   0.08,
+            envMapIntensity: 1.0,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+          });
+        }
+        this.glassMat.color.set(hex);
+        this.glassMat.opacity = opacity;
+        this.glassMat.needsUpdate = true;
+
+        this.glassMeshes.forEach(m => {
+          m.material = this.glassMat;
+          m.visible  = this.glassOn;
+        });
+      },
+
+      // Restore original materials (no tint)
+      clearColour() {
+        this.glassMeshes.forEach(m => {
+          m.material = m.userData.origMat;
+          m.visible  = this.glassOn;
+        });
+      },
+
+      // Toggle glass visibility
+      setGlassVisible(on) {
+        this.glassOn = on;
+        this.glassMeshes.forEach(m => { m.visible = on; });
+      },
+    });
+
+    // ── Build colour swatches ────────────────────────────────────────────────
+    const swatchRow = document.getElementById('swatchRow');
+
+    // "No tint" swatch
+    const noneSwatch = document.createElement('button');
+    noneSwatch.className = 'swatch swatch-none active';
+    noneSwatch.title = 'Без цвета';
+    noneSwatch.dataset.idx = '-1';
+    swatchRow.appendChild(noneSwatch);
+
+    COLOURS.forEach((c, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'swatch';
+      btn.style.background = c.hex;
+      btn.title = c.name;
+      btn.dataset.idx = i;
+      swatchRow.appendChild(btn);
+    });
+
+    let activeSwatchIdx = -1; // -1 = none
+
+    function selectSwatch(idx) {
+      activeSwatchIdx = idx;
+      swatchRow.querySelectorAll('.swatch').forEach(s => {
+        s.classList.toggle('active', +s.dataset.idx === idx);
+      });
+
+      const comp = window._glassComp;
+      if (!comp) return;
+
+      if (idx === -1) {
+        comp.clearColour();
+      } else {
+        const c = COLOURS[idx];
+        comp.applyColour(c.hex, c.opacity);
+      }
+    }
+
+    swatchRow.addEventListener('click', e => {
+      const btn = e.target.closest('.swatch');
+      if (!btn) return;
+      selectSwatch(+btn.dataset.idx);
+    });
+
+    // ── Glass toggle ─────────────────────────────────────────────────────────
+    let glassOn = true;
+    const btnGlass = document.getElementById('btnGlass');
+
+    btnGlass.addEventListener('click', () => {
+      glassOn = !glassOn;
+      btnGlass.textContent = glassOn ? '💎 Стёкла: вкл' : '💎 Стёкла: выкл';
+      btnGlass.classList.toggle('active', glassOn);
+
+      const comp = window._glassComp;
+      if (comp) comp.setGlassVisible(glassOn);
+    });
+
+    // ── Marker overlay ───────────────────────────────────────────────────────
+    function openMarkerOverlay() {
+      document.getElementById('markerOverlay').style.display = 'flex';
+    }
+    function closeMarkerOverlay() {
+      document.getElementById('markerOverlay').style.display = 'none';
+    }
+
+    document.getElementById('showMarkerBtn').addEventListener('click',  openMarkerOverlay);
+    document.getElementById('btnShowMarker2').addEventListener('click', openMarkerOverlay);
+    document.getElementById('btnHideMarker').addEventListener('click',  closeMarkerOverlay);
+
+    // ── AR marker found / lost ───────────────────────────────────────────────
+    const arMarker    = document.getElementById('arMarker');
+    const hint        = document.getElementById('hint');
+    const ui          = document.getElementById('ui');
+    const showMarkerBtn = document.getElementById('showMarkerBtn');
+
+    arMarker.addEventListener('markerFound', () => {
+      hint.style.opacity      = '0';
+      hint.style.pointerEvents = 'none';
+      showMarkerBtn.style.display = 'none';
+      ui.style.display        = 'flex';
+
+      // Brief flash to signal detection
+      const flash = document.createElement('div');
+      flash.className = 'flash-overlay';
+      document.body.appendChild(flash);
+      flash.addEventListener('animationend', () => flash.remove());
+    });
+
+    arMarker.addEventListener('markerLost', () => {
+      hint.style.opacity      = '1';
+      hint.style.pointerEvents = '';
+      showMarkerBtn.style.display = 'flex';
+      ui.style.display        = 'none';
+    });
+
+    // Also listen on scene as fallback (AR.js bubbles events differently across versions)
+    const scene = document.getElementById('scene');
+    scene.addEventListener('markerFound', () => arMarker.dispatchEvent(new Event('markerFound')));
+    scene.addEventListener('markerLost',  () => arMarker.dispatchEvent(new Event('markerLost')));
+
+    // ── Zoom controls ────────────────────────────────────────────────────────
+    const ZOOM_MIN  = 0.5;
+    const ZOOM_MAX  = 4.0;
+    const ZOOM_STEP = 0.25;
+    let zoom = 1;
+
+    function applyZoom() {
+      const cam = document.querySelector('[camera]');
+      if (cam) cam.setAttribute('zoom', zoom);
+      document.getElementById('zoomLabel').textContent =
+        zoom.toFixed(2).replace(/\.?0+$/, '') + '×';
+    }
+
+    document.getElementById('btnZoomIn').addEventListener('click', () => {
+      zoom = Math.min(ZOOM_MAX, +(zoom + ZOOM_STEP).toFixed(2));
+      applyZoom();
+    });
+    document.getElementById('btnZoomOut').addEventListener('click', () => {
+      zoom = Math.max(ZOOM_MIN, +(zoom - ZOOM_STEP).toFixed(2));
+      applyZoom();
+    });
+  </script>
+
+</body>
+</html>
