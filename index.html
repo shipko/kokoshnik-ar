@@ -47,6 +47,38 @@
     .btn-color-purple { background: rgba(156, 39, 176, 0.8); color: white; }
     .btn-color-clear  { background: rgba(100,100,100,0.8); color: white; }
 
+    .zoom-controls {
+      position: fixed;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+    }
+    .zoom-btn {
+      width: 48px;
+      height: 48px;
+      border: none;
+      border-radius: 50%;
+      font-size: 24px;
+      font-weight: 700;
+      cursor: pointer;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      backdrop-filter: blur(10px);
+      line-height: 1;
+    }
+    .zoom-label {
+      color: white;
+      font-size: 13px;
+      background: rgba(0,0,0,0.5);
+      padding: 4px 8px;
+      border-radius: 10px;
+    }
+
     .hint {
       position: fixed;
       top: 20px;
@@ -63,6 +95,12 @@
   </style>
 </head>
 <body>
+
+  <div class="zoom-controls">
+    <button class="zoom-btn" id="btnZoomIn">+</button>
+    <span class="zoom-label" id="zoomLabel">1×</span>
+    <button class="zoom-btn" id="btnZoomOut">−</button>
+  </div>
 
   <div class="hint" id="hint">
     Наведите камеру на маркер
@@ -223,6 +261,30 @@
         const el = document.getElementById('glass-' + c);
         if (el) el.setAttribute('visible', false);
       });
+    });
+
+    // Управление зумом камеры
+    const ZOOM_MIN = 0.5;
+    const ZOOM_MAX = 4;
+    const ZOOM_STEP = 0.25;
+    let currentZoom = 1;
+
+    function applyZoom() {
+      const cameraEl = document.querySelector('[camera]');
+      if (cameraEl) {
+        cameraEl.setAttribute('camera', 'zoom', currentZoom);
+      }
+      document.getElementById('zoomLabel').textContent = currentZoom.toFixed(2).replace(/\.?0+$/, '') + '×';
+    }
+
+    document.getElementById('btnZoomIn').addEventListener('click', () => {
+      currentZoom = Math.min(ZOOM_MAX, parseFloat((currentZoom + ZOOM_STEP).toFixed(2)));
+      applyZoom();
+    });
+
+    document.getElementById('btnZoomOut').addEventListener('click', () => {
+      currentZoom = Math.max(ZOOM_MIN, parseFloat((currentZoom - ZOOM_STEP).toFixed(2)));
+      applyZoom();
     });
   </script>
 
