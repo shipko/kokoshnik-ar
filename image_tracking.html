@@ -50,6 +50,7 @@
     embedded
       arjs="sourceWidth: 640; sourceHeight: 480; trackingMethod: best; debugUIEnabled: true;"
   >
+    <a-camera fov="120"></a-camera>
     <!-- we use cors proxy to avoid cross-origin problems ATTENTION! you need to set up your server -->
     <a-nft
       type="nft"
@@ -62,7 +63,7 @@
       <a-entity
         gltf-model="https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/scene.gltf"
         scale="0.5 0.5 0.5"
-        position="50 100 0"
+        position="50 50 0"
       >
       </a-entity>
     </a-nft>
